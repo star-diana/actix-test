@@ -9,6 +9,7 @@ use local_ipaddress;
 use log::{debug, error, info};
 
 use actix_web_test::config::{log as Log, router};
+use actix_web_test::middleware::auth;
 
 #[get("/ee")]
 async fn ee() -> Result<String, UserError> {
@@ -48,6 +49,15 @@ async fn main() -> std::io::Result<()> {
             .wrap(middleware::Compress::default())
             // 设置默认响应的头部的中间件
             .wrap(middleware::DefaultHeaders::new().header("X-App-Version", "0.1"))
+            // 小型中间件写法，正式环境不建议使用
+            // .wrap_fn(|req, srv| {
+            //     println!("Hi from start. You requested: {}", req.path());
+            //     srv.call(req).map(|res| {
+            //         println!("Hi from response");
+            //         res
+            //     })
+            // })
+            .wrap(auth::Auth)
             // 配置路由
             .configure(router)
     })

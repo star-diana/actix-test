@@ -1,9 +1,8 @@
 extern crate derive_more;
 
-use actix_web::{App, dev::HttpResponseBuilder, Error, get, HttpRequest, HttpResponse, HttpServer, web};
+use actix_web::{App, dev::HttpResponseBuilder, Error, get, HttpRequest, HttpResponse, HttpServer, middleware, web};
 use actix_web::error::{InternalError, ResponseError};
 use actix_web::http::{header, StatusCode};
-use actix_web::middleware::Logger;
 use derive_more::{Display as MoreDisplay, Error as MoreError};
 use dotenv;
 use local_ipaddress;
@@ -43,7 +42,12 @@ async fn main() -> std::io::Result<()> {
 
         App::new()
             // 使用日志中间件
-            .wrap(Logger::default())
+            .wrap(middleware::Logger::default())
+            // 压缩中间件
+            // 默认情况下 ContentEncoding::Auto 被使用
+            .wrap(middleware::Compress::default())
+            // 设置默认响应的头部的中间件
+            .wrap(middleware::DefaultHeaders::new().header("X-App-Version", "0.1"))
             // 配置路由
             .configure(router)
     })
@@ -58,7 +62,7 @@ enum UserError {
     ValidationError { field: String },
 }
 
-// 为自定义错误实现 ResponseError 以可返回 HPPT 错误
+// 为自定义错误实现 ResponseError 以可返回 HTTP 错误
 impl ResponseError for UserError {
     fn status_code(&self) -> StatusCode {
         match *self {

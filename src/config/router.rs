@@ -1,18 +1,36 @@
-use std::collections::HashMap;
+use crate::service::user::{echo, hello, payload};
 
-use actix_web::web::{scope, ServiceConfig};
+use actix_web::{Error, web, HttpResponse};
+use actix_web::web::{scope, ServiceConfig, resource};
+use actix_web::dev::ServiceRequest;
+use actix_web_httpauth::{extractors::bearer::BearerAuth, middleware::HttpAuthentication};
+use log::{debug};
 
-use crate::service::user::{echo, hello};
 
 pub fn router(config: &mut ServiceConfig) {
     config
         .service(hello)
         .service(
+            scope("/api/v1/order")
+                .wrap(HttpAuthentication::bearer(validator))
+                .service(payload)
+        )
+        .service(
             scope("/api/v1/user")
+                // 身份验证中间件
+                // 不能写在 main 那里，那里会拦截全部请求
+                // 这里对此 scope 下的所有路由起作用
+                .wrap(HttpAuthentication::bearer(validator))
                 .service(echo)
-            // TODO
+        )
+        .service(
+            scope("/api/v1")
+                .service(resource("/login").route(web::get().to(|| HttpResponse::Ok().body("这是登录接口"))))
         );
-    // .service(scope("/api/v2")
-    //     .service(r("/user/{user_id}").route(get().to(get_user)))
-    // );
+}
+
+// 身份验证具体处理方法
+async fn validator(req: ServiceRequest, credentials: BearerAuth) -> Result<ServiceRequest, Error> {
+    debug!("{}", credentials.token().to_string());
+    Ok(req)
 }

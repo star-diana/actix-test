@@ -58,14 +58,11 @@ impl<S, B> Service for AuthMiddleware<S>
         // println!("Hi from start. You requested: {}", req.path());
         let mut s = self.service.clone();
         // let future = self.service.call(req);
-        let default = HeaderValue::from_str("").unwrap();
-        let token = req.headers().get("Authorization").unwrap_or(&default);
-
         Box::pin(async move {
             // println!("Hi from response");
-
+            let default = HeaderValue::from_str("").unwrap();
+            let token = req.headers().get("Authorization").unwrap_or(&default);
             // 这里是在路由匹配之前
-            // 这里要配置需要拦截的路由，不然所有的请求都会被拦截
             if token.is_empty() && !req.path().eq("/login") {
                 Err(
                     CustomError::UnauthorizedError {

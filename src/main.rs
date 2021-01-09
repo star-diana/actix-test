@@ -1,15 +1,12 @@
 use actix_cors::Cors;
-use actix_web::{App, dev::HttpResponseBuilder, Error, get, HttpRequest, HttpResponse, HttpServer, middleware, web};
-use actix_web::dev::ServiceRequest;
-use actix_web::error::{InternalError, ResponseError};
-use actix_web::http::{header, StatusCode};
-use actix_web_httpauth::{extractors::bearer::BearerAuth, middleware::HttpAuthentication};
+use actix_web::{App, get, HttpResponse, HttpServer, middleware, web};
+use actix_web::error::{InternalError};
+
 use dotenv;
 use local_ipaddress;
 use log::{debug, error, info};
 
 use actix_web_test::config::{log as Log, router};
-use actix_web_test::middleware as mw;
 use actix_web_test::util::error::CustomError;
 
 #[get("/ee")]
@@ -34,18 +31,17 @@ async fn main() -> std::io::Result<()> {
 
     HttpServer::new(|| {
         // 配置json提取器
-        let json_config = web::JsonConfig::default()
-            .limit(4096)
-            .error_handler(|err, _req| {
-                // 创建一个自定义的错误类型
-                InternalError::from_response(err, HttpResponse::Conflict().finish()).into()
-            });
+        // let json_config = web::JsonConfig::default()
+        //     .limit(4096)
+        //     .error_handler(|err, _req| {
+        //         // 创建一个自定义的错误类型
+        //         InternalError::from_response(err, HttpResponse::Conflict().finish()).into()
+        //     });
 
         App::new()
-            // 使用日志中间件
+            // 日志中间件
             .wrap(middleware::Logger::default())
-            // 压缩中间件
-            // 默认情况下 ContentEncoding::Auto 被使用
+            // 压缩中间件，默认情况下 ContentEncoding::Auto 被使用
             .wrap(middleware::Compress::default())
             // 小型中间件写法，正式环境不建议使用
             // .wrap_fn(|req, srv| {
@@ -55,12 +51,9 @@ async fn main() -> std::io::Result<()> {
             //         res
             //     })
             // })
-
-            // 身份验证中间件
-            .wrap(HttpAuthentication::bearer(validator))
             // CORS 中间件
             .wrap(Cors::permissive())
-            // 设置默认响应的头部的中间件
+            // 默认响应的头部的中间件
             .wrap(middleware::DefaultHeaders::new().header("X-App-Version", "0.1"))
             // 配置路由
             .configure(router)
@@ -69,10 +62,4 @@ async fn main() -> std::io::Result<()> {
         .bind(format!("{}:{}", host, port))?
         .run()
         .await
-}
-
-// 身份验证具体处理方法
-async fn validator(req: ServiceRequest, credentials: BearerAuth) -> Result<ServiceRequest, Error> {
-    eprintln!("{:?}", credentials);
-    Ok(req)
 }

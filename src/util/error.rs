@@ -9,7 +9,7 @@ use derive_more::{Display, Error, From};
 pub enum CustomError {
     #[display(fmt = "Validation error on field: {}", message)]
     ValidationError { message: String },
-    #[display(fmt = "Bearer realm=\"{}\", error=\"{}\", error_description=\"{}\"", realm, error, message)]
+    #[display(fmt = "")]
     UnauthorizedError {
         realm: String,
         error: String,

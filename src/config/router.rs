@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use actix_web::web::{scope, ServiceConfig};
 
 use crate::service::user::{echo, hello};

@@ -17,12 +17,18 @@ async-std = { version = "1.8", features = ["attributes", "tokio02"] }
 #序列化
 serde = { version = "1", features = ["derive"] }
 serde_json = "1.0"
-
 derive_more = { version = "0.99", features = ["display", "error", "from"] }
+chrono = { version = "0.4", features = ["serde"] }
+lazy_static = "1.4"
+
 #日志
 log = "0.4"
 #env_logger = "0.8"
-log4rs="1"
+log4rs = "1"
+
+# rbatis
+rbatis = { version = "1.8", features = ["snowflake", "debug_mode"] }
+
 #读取环境变量文件
 dotenv = "0.15"
 #读取内网 ip

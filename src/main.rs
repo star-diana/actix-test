@@ -6,7 +6,7 @@ use dotenv;
 use local_ipaddress;
 use log::{debug, error, info};
 
-use actix_web_test::config::{log as Log, router};
+use actix_web_test::config::{log as Log, router, db, CONFIG};
 use actix_web_test::util::error::CustomError;
 
 #[get("/ee")]
@@ -17,17 +17,28 @@ async fn ee() -> Result<String, CustomError> {
     Ok(result.map_err(|e| e)?)
 }
 
+async fn init_db_link() {
+    let mysql_url = format!("mysql://{}:{}@{}:{}/{}", CONFIG.db_username, CONFIG.db_password, CONFIG.db_host, CONFIG.db_port, CONFIG.db_name);
+    let url = match CONFIG.db_type.as_str() {
+        "mysql" => mysql_url,
+        "postgresql" => format!("postgresql://{}:{}@{}:{}/{}", user, password, host, port, db_name),
+        _ => mysql_url,
+    };
+    db::RB.link(&url).await.unwrap()
+}
+
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
+    // 日志初始化
     Log::init_logger();
+    // 数据库连接初始化
+    init_db_link().await;
 
     let local_ip = local_ipaddress::get().unwrap();
-    let host = dotenv::var("APP_BASIC_HOST").unwrap();
-    let port = dotenv::var("PORT").unwrap();
 
     info!("actix-web app run at:");
-    info!("- Local:\thttp://127.0.0.1:{}", port);
-    info!("- Network:\thttp://{}:{}", local_ip, port);
+    info!("- Local:\thttp://127.0.0.1:{}", CONFIG.app_port);
+    info!("- Network:\thttp://{}:{}", local_ip, CONFIG.app_port);
 
     HttpServer::new(|| {
         // 配置json提取器
@@ -59,7 +70,7 @@ async fn main() -> std::io::Result<()> {
             .configure(router)
             .service(ee)
     })
-        .bind(format!("{}:{}", host, port))?
+        .bind(format!("{}:{}", CONFIG.app_bind_host, CONFIG.app_port))?
         .run()
         .await
 }

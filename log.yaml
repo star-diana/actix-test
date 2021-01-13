@@ -20,7 +20,7 @@ appenders:
         count: 5
 
 root:
-  level: info
+  level: debug
   appenders:
     - stdout
     - requests

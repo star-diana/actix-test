@@ -7,6 +7,7 @@ lazy_static! {
      let mut rbatis = Rbatis::new();
      //logic plugin 设置逻辑删除插件
      rbatis.logic_plugin = Some(Box::new(RbatisLogicDeletePlugin::new_opt("del",1,0)));
-     return rbatis;
+
+     rbatis
   };
 }

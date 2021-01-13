@@ -19,6 +19,8 @@ pub struct ApplicationConfig {
     pub db_port: String,
     // 数据库名
     pub db_name: String,
+
+    pub db_query_str: String,
 }
 
 // 默认配置
@@ -34,6 +36,7 @@ impl Default for ApplicationConfig {
             db_host: dotenv::var("DB_HOST").unwrap_or(String::from("localhost")),
             db_port: dotenv::var("DB_PORT").unwrap_or(String::from("3306")),
             db_name: dotenv::var("DB_NAME").unwrap_or(String::from("")),
+            db_query_str: dotenv::var("DB_NAME").unwrap_or(String::from("")),
         }
     }
 }

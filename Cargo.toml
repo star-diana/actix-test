@@ -27,7 +27,7 @@ log = "0.4"
 log4rs = "1"
 
 # rbatis
-rbatis = { version = "1.8", features = ["snowflake", "debug_mode"] }
+rbatis = { version = "1.8", default-features = false, features = ["actix-mysql", "snowflake", "debug_mode"] }
 
 #读取环境变量文件
 dotenv = "0.15"
@@ -35,3 +35,4 @@ dotenv = "0.15"
 local_ipaddress = "0.1"
 #JWT
 jsonwebtoken = "7"
+serde_urlencoded = "0.7"

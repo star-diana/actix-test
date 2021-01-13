@@ -1,4 +1,4 @@
-use crate::service::user::{echo, hello, payload};
+use crate::service::user::{get_info, hello, payload, get_all_users, get_user, add_new_user, update_user};
 
 use actix_web::{Error, web, HttpResponse};
 use actix_web::web::{scope, ServiceConfig, resource};
@@ -20,8 +20,13 @@ pub fn router(config: &mut ServiceConfig) {
                 // 身份验证中间件
                 // 不能写在 main 那里，那里会拦截全部请求
                 // 这里对此 scope 下的所有路由起作用
-                .wrap(HttpAuthentication::bearer(validator))
-                .service(echo)
+                // .wrap(HttpAuthentication::bearer(validator))
+                // .service(get_user)
+                .service(get_all_users)
+                .service(get_info)
+                .service(get_user)
+                .service(add_new_user)
+                .service(update_user)
         )
         .service(
             scope("/api/v1")

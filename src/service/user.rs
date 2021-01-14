@@ -1,18 +1,22 @@
-use actix_web::{Either, error, Error, get, post, put, HttpRequest, HttpResponse, Responder, web};
+use actix_web::{Either, Error, get, post, put, delete, HttpRequest, HttpResponse, Responder, web};
 use actix_web::http::Version;
-use actix_web::web::Path;
+use actix_web::web::{Path, Json};
 
 use futures::StreamExt;
 use serde::{Deserialize, Serialize};
-use rbatis::crud::CRUD;
-use rbatis::plugin::page::{PageRequest, Page};
+use serde_json::Value;
 use serde_urlencoded::from_str;
+use rbatis::crud::CRUD;
+use rbatis::plugin::page::{PageRequest};
+use rbatis::rbatis::Rbatis;
+use rbatis::core::Error as RError;
+
 use std::collections::HashMap;
 
 use crate::config::db::RB;
 use crate::model::user::{User, NewUser, UpdateUser};
 use crate::util::error::CustomError;
-use actix_web::dev::Service;
+
 
 #[derive(Deserialize, Serialize)]
 pub struct Info {
@@ -49,7 +53,7 @@ pub async fn get_all_users(req: HttpRequest) -> Result<HttpResponse, Error> {
     let wrapper = RB.new_wrapper().check().unwrap();
     let result = RB.fetch_page_by_wrapper::<User>("", &wrapper, &request)
         .await
-        .map_err(|e| error::ErrorInternalServerError(e))?;
+        .map_err(|e| CustomError::InternalError { message: e.to_string() })?;
 
     // 不分页
     // let result = RB.list::<User>("").await.map_err(|e| error::ErrorInternalServerError(e))?;
@@ -67,44 +71,104 @@ pub async fn get_user(Path(id): Path<u32>) -> Result<HttpResponse, Error> {
 
     let user = RB.fetch_by_id::<Option<User>>("", &id)
         .await
-        .map_err(|e| error::ErrorInternalServerError(e))?;
+        .map_err(|e| CustomError::InternalError { message: e.to_string() })?;
 
     debug!("{:?}", user);
     Ok(HttpResponse::Ok().json(user))
 }
 
 #[post("")]
-pub async fn add_new_user(user: web::Json<NewUser>) -> Result<HttpResponse, Error> {
+pub async fn add_new_user(user: Json<NewUser>) -> Result<HttpResponse, Error> {
     debug!("{:?}", user.0);
+
+    let value = query_uname_repeat(&RB, &user.0.uname)
+        .await
+        .map_err(|e| CustomError::InternalError { message: e.to_string() })?;
+
+    let empty_list = Vec::new();
+    let value = value.as_array().unwrap_or(&empty_list);
+    if !value.is_empty() {
+        return Err(CustomError::ValidationError { message: "用户名已存在".to_string() }.into());
+    }
+
     let result = RB.save("", &user.0)
         .await
-        .map_err(|e| error::ErrorInternalServerError(e))?;
+        .map_err(|e| CustomError::InternalError { message: e.to_string() })?;
 
-    Ok(HttpResponse::Ok().body(result.last_insert_id.unwrap().to_string()))
+    let id = result.last_insert_id.unwrap() as u32;
+    let new_user = RB.fetch_by_id::<Option<User>>("", &id)
+        .await
+        .map_err(|e| CustomError::InternalError { message: e.to_string() })?;
+
+    Ok(HttpResponse::Created().json(new_user))
 }
 
 
 #[put("/{id}")]
-pub async fn update_user(Path(id): Path<u32>, user: web::Json<UpdateUser>) -> Result<HttpResponse, Error> {
+pub async fn update_user(Path(id): Path<u32>, user: Json<UpdateUser>) -> Result<HttpResponse, Error> {
     if !id.eq(&user.0.uid) {
         return Err(CustomError::ValidationError { message: "\"uid\"不一致".to_string() }.into());
     }
-    // TODO
-    let i = RB.update_by_id("", &user.0)
+
+    let empty_list = Vec::new();
+
+    let result = query_uid_repeat(&RB, &id)
         .await
-        .map_err(|e| {
-            error::ErrorInternalServerError(e)
-        })?;
+        .map_err(|e| CustomError::InternalError { message: e.to_string() })?;
+    let list = result.as_array().unwrap_or(&empty_list);
+    if list.is_empty() {
+        return Err(CustomError::ValidationError { message: "\"uid\"不存在".to_string() }.into());
+    }
 
+    // 先查询用户名是否已存在
+    let result = query_uname_repeat(&RB, &user.0.uname)
+        .await
+        .map_err(|e| CustomError::InternalError { message: e.to_string() })?;
+    let list = result.as_array().unwrap_or(&empty_list);
+    if !list.is_empty() {
+        return Err(CustomError::ValidationError { message: "用户名已存在".to_string() }.into());
+    }
 
-    Ok(HttpResponse::Ok().body(i.to_string()))
+    let row = RB.update_by_id("", &user.0)
+        .await
+        .map_err(|e| CustomError::InternalError { message: e.to_string() })?;
+
+    if row > 0 {
+        Ok(HttpResponse::ResetContent().finish())
+    } else {
+        Ok(HttpResponse::NotModified().finish())
+    }
 }
 
-#[post("/echo")]
-pub async fn echo(req_body: String) -> impl Responder {
-    println!("{}", req_body);
-    HttpResponse::Ok().body(req_body)
+#[delete("/{id}")]
+pub async fn del_user(Path(id): Path<u32>) -> Result<HttpResponse, Error> {
+    let empty_list = Vec::new();
+
+    let result = query_uid_repeat(&RB, &id)
+        .await
+        .map_err(|e| CustomError::InternalError { message: e.to_string() })?;
+    let list = result.as_array().unwrap_or(&empty_list);
+    if list.is_empty() {
+        return Err(CustomError::ValidationError { message: "\"uid\"不存在".to_string() }.into());
+    }
+
+    let row = RB.remove_by_id::<User>("", &id)
+        .await
+        .map_err(|e| CustomError::InternalError { message: e.to_string() })?;
+
+    if row > 0 {
+        Ok(HttpResponse::ResetContent().finish())
+    } else {
+        Ok(HttpResponse::NotModified().finish())
+    }
 }
+
+
+#[sql(rb, "SELECT count(1) as count FROM user WHERE uname = ? having count > 0")]
+async fn query_uname_repeat(rb: &Rbatis, name: &str) -> Result<Value, RError> {}
+
+#[sql(rb, "SELECT count(1) as count FROM user WHERE uid = ? having count > 0")]
+async fn query_uid_repeat(rb: &Rbatis, id: &u32) -> Result<Value, RError> {}
 
 
 // 请求必须带有 name 的 query 参数才会正确响应
@@ -131,14 +195,6 @@ pub async fn get_user_info(web::Path((user_id, friend)): web::Path<(u32, String)
 }
 
 
-// 将request body中的信息反序列化到 Info 结构体中去
-// 请求必须带有 Info 结构体类型的数据才会正确响应
-#[get("/user/data")]
-pub async fn user_data(info: web::Json<Info>) -> impl Responder {
-    HttpResponse::Ok().body(format!("Welcome {}!", info.name))
-}
-
-
 /// 使用 serde 提取表单数据
 /// 仅当 content type 类型是  *x-www-form-urlencoded* 是 handler 处理函数才会被调用
 /// 且请求中的内容能够被反序列化到一个 "Info" 结构体中去.
@@ -156,12 +212,4 @@ pub async fn payload(mut body: web::Payload) -> Result<HttpResponse, Error> {
     }
 
     Ok(HttpResponse::Ok().body(format!("Body {}!", String::from_utf8(bytes.to_vec()).unwrap())))
-}
-
-#[get("/ee")]
-async fn ee() -> Result<String, CustomError> {
-    let error = CustomError::ValidationError { message: String::from("啦啦啦啦") };
-    let result = Err(error);
-
-    Ok(result.map_err(|e| e)?)
 }

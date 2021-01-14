@@ -1,10 +1,9 @@
 use actix_cors::Cors;
 use actix_web::{App, get, HttpResponse, HttpServer, middleware, web};
-use actix_web::error::{InternalError};
+// use actix_web::error::{InternalError};
 
-use dotenv;
 use local_ipaddress;
-use log::{debug, error, info};
+use log::{info};
 
 use actix_web_test::config::{log as Log, router, db, CONFIG};
 

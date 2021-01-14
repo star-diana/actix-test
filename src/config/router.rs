@@ -1,4 +1,4 @@
-use crate::service::user::{get_info, hello, payload, get_all_users, get_user, add_new_user, update_user};
+use crate::service::user::{get_info, hello, payload, get_all_users, get_user, add_new_user, update_user, del_user};
 
 use actix_web::{Error, web, HttpResponse};
 use actix_web::web::{scope, ServiceConfig, resource};
@@ -27,6 +27,7 @@ pub fn router(config: &mut ServiceConfig) {
                 .service(get_user)
                 .service(add_new_user)
                 .service(update_user)
+                .service(del_user)
         )
         .service(
             scope("/api/v1")

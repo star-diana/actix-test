@@ -19,8 +19,12 @@ pub struct ApplicationConfig {
     pub db_port: String,
     // 数据库名
     pub db_name: String,
-
+    //数据库连接 query 参数
     pub db_query_str: String,
+    // 签名 token 的 secret
+    pub token_secret: String,
+    // 签名 token 的 Issuer
+    pub token_issuer: String,
 }
 
 // 默认配置
@@ -36,7 +40,9 @@ impl Default for ApplicationConfig {
             db_host: dotenv::var("DB_HOST").unwrap_or(String::from("localhost")),
             db_port: dotenv::var("DB_PORT").unwrap_or(String::from("3306")),
             db_name: dotenv::var("DB_NAME").unwrap_or(String::from("")),
-            db_query_str: dotenv::var("DB_NAME").unwrap_or(String::from("")),
+            db_query_str: dotenv::var("DB_QUERY_STR").unwrap_or(String::from("")),
+            token_secret: dotenv::var("TOKEN_SECRET").unwrap_or(String::from("")),
+            token_issuer: dotenv::var("TOKEN_ISSUER").unwrap_or(String::from("")),
         }
     }
 }

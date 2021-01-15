@@ -28,11 +28,6 @@ pub async fn hello() -> impl Responder {
     HttpResponse::Ok().body("Hello Actix-Web!")
 }
 
-#[derive(Deserialize, Serialize)]
-pub struct Pagination {
-    page: u64,
-}
-
 #[get("/all")]
 pub async fn get_all_users(req: HttpRequest) -> Result<HttpResponse, Error> {
     debug!("query string: {}", req.query_string());
@@ -56,7 +51,9 @@ pub async fn get_all_users(req: HttpRequest) -> Result<HttpResponse, Error> {
         .map_err(|e| CustomError::InternalError { message: e.to_string() })?;
 
     // 不分页
-    // let result = RB.list::<User>("").await.map_err(|e| error::ErrorInternalServerError(e))?;
+    // let result = RB.list::<User>("")
+    //     .await
+    //     .map_err(|e| CustomError::InternalError { message: e.to_string() })?;
 
     Ok(HttpResponse::Ok().json(result))
 }
@@ -117,10 +114,9 @@ pub async fn update_user(Path(id): Path<u32>, user: Json<UpdateUser>) -> Result<
         .map_err(|e| CustomError::InternalError { message: e.to_string() })?;
     let list = result.as_array().unwrap_or(&empty_list);
     if list.is_empty() {
-        return Err(CustomError::ValidationError { message: "\"uid\"不存在".to_string() }.into());
+        return Err(CustomError::ValidationError { message: "此用户不存在".to_string() }.into());
     }
 
-    // 先查询用户名是否已存在
     let result = query_uname_repeat(&RB, &user.0.uname)
         .await
         .map_err(|e| CustomError::InternalError { message: e.to_string() })?;
@@ -129,12 +125,12 @@ pub async fn update_user(Path(id): Path<u32>, user: Json<UpdateUser>) -> Result<
         return Err(CustomError::ValidationError { message: "用户名已存在".to_string() }.into());
     }
 
-    let row = RB.update_by_id("", &user.0)
+    let row = RB.update_by_id::<UpdateUser>("", &user.0)
         .await
         .map_err(|e| CustomError::InternalError { message: e.to_string() })?;
 
     if row > 0 {
-        Ok(HttpResponse::ResetContent().finish())
+        Ok(HttpResponse::Ok().finish())
     } else {
         Ok(HttpResponse::NotModified().finish())
     }
@@ -149,7 +145,7 @@ pub async fn del_user(Path(id): Path<u32>) -> Result<HttpResponse, Error> {
         .map_err(|e| CustomError::InternalError { message: e.to_string() })?;
     let list = result.as_array().unwrap_or(&empty_list);
     if list.is_empty() {
-        return Err(CustomError::ValidationError { message: "\"uid\"不存在".to_string() }.into());
+        return Err(CustomError::ValidationError { message: "此用户不存在".to_string() }.into());
     }
 
     let row = RB.remove_by_id::<User>("", &id)
@@ -157,17 +153,17 @@ pub async fn del_user(Path(id): Path<u32>) -> Result<HttpResponse, Error> {
         .map_err(|e| CustomError::InternalError { message: e.to_string() })?;
 
     if row > 0 {
-        Ok(HttpResponse::ResetContent().finish())
+        Ok(HttpResponse::Ok().finish())
     } else {
         Ok(HttpResponse::NotModified().finish())
     }
 }
 
 
-#[sql(rb, "SELECT count(1) as count FROM user WHERE uname = ? having count > 0")]
+#[sql(rb, "SELECT count(1) as count FROM user WHERE uname = ? AND del = 0 having count > 0")]
 async fn query_uname_repeat(rb: &Rbatis, name: &str) -> Result<Value, RError> {}
 
-#[sql(rb, "SELECT count(1) as count FROM user WHERE uid = ? having count > 0")]
+#[sql(rb, "SELECT count(1) as count FROM user WHERE uid = ? AND del = 0 having count > 0")]
 async fn query_uid_repeat(rb: &Rbatis, id: &u32) -> Result<Value, RError> {}
 
 

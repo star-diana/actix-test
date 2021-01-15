@@ -4,7 +4,6 @@ use actix_web::{HttpResponse, ResponseError};
 use actix_web::dev::HttpResponseBuilder;
 use actix_web::http::{header, StatusCode};
 use derive_more::{Display, Error};
-// use serde_json::json;
 use serde::{Serialize};
 
 
@@ -12,12 +11,14 @@ use serde::{Serialize};
 pub enum CustomError {
     #[display(fmt = "校验错误: {}", message)]
     ValidationError { message: String },
-    #[display(fmt = "")]
+    #[display(fmt = "{}: {}", error, message)]
     UnauthorizedError {
         realm: String,
         error: String,
         message: String,
     },
+    #[display(fmt = "登录失败: {}", message)]
+    LoginError { message: String },
     #[display(fmt = "服务器异常: {}", message)]
     InternalError { message: String },
 }
@@ -34,7 +35,8 @@ impl ResponseError for CustomError {
         match *self {
             CustomError::ValidationError { .. } => StatusCode::BAD_REQUEST,
             CustomError::UnauthorizedError { .. } => StatusCode::UNAUTHORIZED,
-            CustomError::InternalError { .. } => StatusCode::INTERNAL_SERVER_ERROR
+            CustomError::InternalError { .. } => StatusCode::INTERNAL_SERVER_ERROR,
+            CustomError::LoginError { .. } => StatusCode::UNAUTHORIZED,
         }
     }
     fn error_response(&self) -> HttpResponse {

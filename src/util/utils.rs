@@ -1,17 +1,18 @@
 use actix_web::dev::ServiceRequest;
 use actix_web::Error;
 use actix_web::http::header;
-
 use actix_web_httpauth::extractors::bearer::BearerAuth;
+
 use chrono::prelude::*;
+use chrono::Duration;
 use jsonwebtoken::{encode, Header, EncodingKey, Algorithm, Validation, decode, DecodingKey};
+use jsonwebtoken::errors::ErrorKind;
 
 use crate::config::CONFIG;
 use crate::model::Claims;
 use crate::model::user::User;
 use crate::util::error::CustomError;
-use jsonwebtoken::errors::ErrorKind;
-use chrono::Duration;
+
 
 // 身份验证具体处理方法
 pub async fn validator(req: ServiceRequest, credentials: BearerAuth) -> Result<ServiceRequest, Error> {

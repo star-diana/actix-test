@@ -1,5 +1,5 @@
 use actix_cors::Cors;
-use actix_web::{App, get, HttpResponse, HttpServer, middleware, web};
+use actix_web::{App, HttpResponse, HttpServer, middleware};
 // use actix_web::error::{InternalError};
 
 use local_ipaddress;

@@ -2,7 +2,7 @@ extern crate derive_more;
 
 use actix_web::{HttpResponse, ResponseError};
 use actix_web::dev::HttpResponseBuilder;
-use actix_web::http::{header, StatusCode};
+use actix_web::http::{StatusCode};
 use derive_more::{Display, Error};
 use serde::{Serialize};
 

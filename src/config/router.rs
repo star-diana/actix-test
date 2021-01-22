@@ -1,4 +1,3 @@
-use actix_web::{Error, web, HttpResponse};
 use actix_web::web::{scope, ServiceConfig, resource};
 use actix_web_httpauth::middleware::HttpAuthentication;
 

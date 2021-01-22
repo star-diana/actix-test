@@ -10,15 +10,19 @@ use crate::util::error::CustomError;
 
 #[post("/login")]
 pub async fn login(lc: Json<LoginCredentials>) -> Result<HttpResponse, Error> {
-    let wrapper = RB.new_wrapper().eq("uname", lc.uname.as_str()).check().unwrap();
+    let wrapper = RB.new_wrapper()
+        .eq("uname", lc.uname.as_str())
+        .and()
+        .eq("password", lc.password.as_str())
+        .check().unwrap();
     let user = RB.fetch_by_wrapper::<Option<User>>("", &wrapper)
         .await
         .map_err(|e| CustomError::InternalError { message: e.to_string() })?
         .ok_or(CustomError::LoginError { message: "用户名或密码错误".to_string() })?;
-    // 用户名或密码不匹配
-    if user.uname != lc.uname || user.password != Some(lc.password.to_owned()) {
-        return Err(CustomError::LoginError { message: "用户名或密码错误".to_string() }.into());
-    }
+    // // 用户名或密码不匹配
+    // if user.uname != lc.uname || user.password != Some(lc.password.to_owned()) {
+    //     return Err(CustomError::LoginError { message: "用户名或密码错误".to_string() }.into());
+    // }
 
     let token = sign_token(user.to_owned())?;
 

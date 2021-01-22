@@ -1,6 +1,4 @@
 use serde::{Deserialize, Serialize};
-use jsonwebtoken::Algorithm;
-use std::collections::HashSet;
 
 pub mod user;
 

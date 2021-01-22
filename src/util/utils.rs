@@ -6,7 +6,6 @@ use actix_web_httpauth::extractors::bearer::BearerAuth;
 use chrono::prelude::*;
 use chrono::Duration;
 use jsonwebtoken::{encode, Header, EncodingKey, Algorithm, Validation, decode, DecodingKey};
-use jsonwebtoken::errors::ErrorKind;
 
 use crate::config::CONFIG;
 use crate::model::Claims;

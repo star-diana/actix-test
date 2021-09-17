@@ -39,14 +39,13 @@ pub async fn get_all_users(req: HttpRequest) -> Result<HttpResponse, Error> {
         .map_err(|_e| CustomError::ValidationError { message: "\"page\"参数必须是数字".to_string() })?;
     let page_size = query_map
         .get("page_size")
-        .map(|s| { if s.is_empty() { "20" } else { s } })
         .unwrap_or(&String::from("20"))
         .parse::<u64>()
         .map_err(|_e| CustomError::ValidationError { message: "\"page_size\"参数必须是数字".to_string() })?;
 
     let request = PageRequest::new(page, page_size);
-    let wrapper = RB.new_wrapper().check().unwrap();
-    let result = RB.fetch_page_by_wrapper::<User>("", &wrapper, &request)
+    let wrapper = RB.new_wrapper();
+    let result = RB.fetch_page_by_wrapper::<User>( &wrapper, &request)
         .await
         .map_err(|e| CustomError::InternalError { message: e.to_string() })?;
 
@@ -61,12 +60,12 @@ pub async fn get_all_users(req: HttpRequest) -> Result<HttpResponse, Error> {
 #[get("/{id}")]
 pub async fn get_user(Path(id): Path<u32>) -> Result<HttpResponse, Error> {
     //  wrapper 写法
-    // let wrapper = RB.new_wrapper().eq("uid", id).check().unwrap();
+    // let wrapper = RB.new_wrapper().eq("uid", id).unwrap();
     // let user = RB.fetch_by_wrapper::<Option<User>>("", &wrapper)
     //     .await
     //     .map_err(|e| error::ErrorInternalServerError(e))?;
 
-    let user = RB.fetch_by_id::<Option<User>>("", &id)
+    let user = RB.fetch_by_column::<Option<User>, String>("uid", &id.to_string())
         .await
         .map_err(|e| CustomError::InternalError { message: e.to_string() })?;
 
@@ -88,12 +87,12 @@ pub async fn add_new_user(user: Json<NewUser>) -> Result<HttpResponse, Error> {
         return Err(CustomError::ValidationError { message: "用户名已存在".to_string() }.into());
     }
 
-    let result = RB.save("", &user.0)
+    let result = RB.save( &user.0,&[])
         .await
         .map_err(|e| CustomError::InternalError { message: e.to_string() })?;
 
     let id = result.last_insert_id.unwrap() as u32;
-    let new_user = RB.fetch_by_id::<Option<User>>("", &id)
+    let new_user = RB.fetch_by_column::<Option<User>, String>("uid", &id.to_string())
         .await
         .map_err(|e| CustomError::InternalError { message: e.to_string() })?;
 
@@ -125,7 +124,8 @@ pub async fn update_user(Path(id): Path<u32>, user: Json<UpdateUser>) -> Result<
         return Err(CustomError::ValidationError { message: "用户名已存在".to_string() }.into());
     }
 
-    let row = RB.update_by_id::<UpdateUser>("", &user.0)
+    let mut update_user = user.clone();
+    let row = RB.update_by_column::<UpdateUser>("uid", &mut update_user)
         .await
         .map_err(|e| CustomError::InternalError { message: e.to_string() })?;
 
@@ -148,7 +148,7 @@ pub async fn del_user(Path(id): Path<u32>) -> Result<HttpResponse, Error> {
         return Err(CustomError::ValidationError { message: "此用户不存在".to_string() }.into());
     }
 
-    let row = RB.remove_by_id::<User>("", &id)
+    let row = RB.remove_by_column::<User, String>("", &id.to_string())
         .await
         .map_err(|e| CustomError::InternalError { message: e.to_string() })?;
 

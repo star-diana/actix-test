@@ -1,7 +1,7 @@
 use chrono::NaiveDateTime;
 use serde::{Deserialize, Serialize};
 
-#[crud_enable(id_name: "uid" | id_type: "u32")]
+#[crud_table(id_name: "uid" | id_type: "u32")]
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct User {
     pub uid: u32,
@@ -14,7 +14,7 @@ pub struct User {
     pub del: u32,
 }
 
-#[crud_enable(id_name: "uid" | id_type: "u32" | table_name: "user")]
+#[crud_table(id_name: "uid" | id_type: "u32" | table_name: "user")]
 #[derive(Clone, Debug)]
 pub struct NewUser {
     pub uname: String,
@@ -23,7 +23,7 @@ pub struct NewUser {
     pub email: String,
 }
 
-#[crud_enable(id_name: "uid" | id_type: "u32" | table_name: "user")]
+#[crud_table(id_name: "uid" | id_type: "u32" | table_name: "user")]
 #[derive(Clone, Debug)]
 pub struct UpdateUser {
     pub uid: u32,

@@ -5,7 +5,7 @@ use actix_web::{App, HttpResponse, HttpServer, middleware};
 use local_ipaddress;
 use log::{info};
 
-use actix_web_test::config::{log as Log, router, db, CONFIG};
+use actix_test::config::{log as Log, router, db, CONFIG};
 
 async fn init_db_link() {
     let mysql_url = format!("mysql://{}:{}@{}:{}/{}?{}", CONFIG.db_username, CONFIG.db_password, CONFIG.db_host, CONFIG.db_port, CONFIG.db_name, CONFIG.db_query_str);

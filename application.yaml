@@ -1,0 +1,6 @@
+BIND_HOST: "0.0.0.0"
+PORT: 8888
+RUST_LOG: "actix_test: debug,actix_web: debug"
+DB_URL: "mysql://root:123456@localhost:3306/test"
+TOKEN_SECRET: "A40CDF01-0766-4C71-A7D0-8727EDFE8C78"
+TOKEN_ISSUER: "starshine@aili.moe"

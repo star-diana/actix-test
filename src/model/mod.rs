@@ -7,7 +7,7 @@ pub struct Claims {
     // 必要，过期时间，UTC 时间戳
     pub exp: usize,
     // 可选，签发人
-    pub iss: String,
+    pub iss: &'static str,
     pub id: usize,
-    pub uname: String,
+    pub uname: &'static str,
 }

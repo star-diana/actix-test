@@ -1,14 +1,9 @@
-use app_config::ApplicationConfig;
+use once_cell::sync::Lazy;
+use application::ApplicationConfig;
 
 pub mod router;
 pub mod log;
-pub mod db;
-pub mod app_config;
+pub mod database;
+pub mod application;
 
-pub use router::router;
-
-
-//当前服务配置
-lazy_static! {
-    pub static ref CONFIG: ApplicationConfig = ApplicationConfig::default();
-}
+pub static CONFIG: Lazy<ApplicationConfig> = Lazy::new(|| ApplicationConfig::default());

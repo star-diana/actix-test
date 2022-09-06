@@ -1,12 +1,10 @@
 use actix_web::{
-    error, get,
     http::{ header::ContentType, StatusCode },
-    App, HttpResponse, HttpServer,
+    error, HttpResponse,
 };
-use derive_more::{ Display, Error };
 use serde::{ Serialize };
 
-#[derive(Debug, Display, Error)]
+#[derive(Debug, derive_more::Display, derive_more::Error)]
 pub enum CustomError {
     #[display(fmt = "校验错误: {}", message)]
     ValidationError { message: &'static str },
@@ -45,20 +43,15 @@ impl error::ResponseError for CustomError {
     fn error_response(&self) -> HttpResponse {
         let mut builder = HttpResponse::build(self.status_code());
 
-        match self {
-            CustomError::UnauthorizedError { realm, error, message } => {
-                builder.insert_header((
-                    "WWW-Authenticate",
-                    format!("Bearer realm=\"{}\", error=\"{}\", error_description=\"{}\"", realm, error, message)
-                ));
-            }
-            _ => {}
+        if let CustomError::UnauthorizedError { realm, error, message } = self {
+            builder.insert_header((
+                "WWW-Authenticate",
+                format!("Bearer realm=\"{}\", error=\"{}\", error_description=\"{}\"", realm, error, message)
+            ));
         }
 
-        // let error_message = json!({"code":status_code.as_u16(),"message":self.to_string()});
-
-        builder.insert_header(ContentType::json())
-            // .body(format!("{}", error_message))
+        builder
+            .insert_header(ContentType::json())
             .json(ResponseMessage {
                 code: self.status_code().as_u16(),
                 message: self.to_string(),

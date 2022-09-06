@@ -1,8 +1,14 @@
-// extern crate log4rs;
-//
-// use std::env;
-//
-// pub fn init_logger() {
-//     env::set_var("RUST_BACKTRACE", "full");
-//     log4rs::init_file("log.yaml",Default::default()).unwrap();
-// }
+use fast_log::Config;
+use fast_log::plugin::file_split::RollingType;
+use fast_log::plugin::packer::LogPacker;
+use fast_log::consts::LogSize;
+
+pub fn init_logger() {
+    fast_log::init(Config::new().console().file_split(
+        "target/logs/",
+        LogSize::MB(1),
+        RollingType::All,
+        LogPacker {},
+    ))
+    .unwrap();
+}

@@ -6,4 +6,4 @@ pub mod log;
 pub mod database;
 pub mod application;
 
-pub static CONFIG: Lazy<ApplicationConfig> = Lazy::new(|| ApplicationConfig::default());
+pub static CONFIG: Lazy<ApplicationConfig> = Lazy::new(ApplicationConfig::default);
